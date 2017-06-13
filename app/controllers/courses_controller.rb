@@ -1,5 +1,6 @@
 class CoursesController < ApplicationController
-  # before_action :authenticate_user!, only: [:new, :create, :edit, :update, :destroy]
+  before_action :authenticate_user!, only: [:new, :create]
+  # , :create, :edit, :update, :destroy]
   def index
     @courses = Course.all
   end
