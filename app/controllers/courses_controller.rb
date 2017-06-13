@@ -1,5 +1,5 @@
 class CoursesController < ApplicationController
-  before_action :authenticate_user!, only: [:new, :create, :edit, :update, :destroy]
+  # before_action :authenticate_user!, only: [:new, :create, :edit, :update, :destroy]
   def index
     @courses = Course.all
   end
@@ -14,7 +14,7 @@ class CoursesController < ApplicationController
 
   def create
     @course = Course.new(course_params)
-    @course.user = current_user
+    # @course.user = current_user
     if @course.save
       redirect_to courses_path
     else
@@ -23,11 +23,13 @@ class CoursesController < ApplicationController
   end
 
   def edit
-    @course = current_user.courses.find(params[:id])
+    @course = Course.find(params[:id])
+    # @course = current_user.courses.find(params[:id])
   end
 
   def update
-    @course = current_user.courses.find(params[:id])
+    @course = Course.find(params[:id])
+    # @course = current_user.courses.find(params[:id])
 
     if @course.update(course_params)
       redirect_to course_path(@course)
@@ -37,7 +39,8 @@ class CoursesController < ApplicationController
   end
 
   def destroy
-    @course = current_user.courses.find(params[:id])
+    @course = Course.find(params[:id])
+    # @course = current_user.courses.find(params[:id])
     @course.destroy
 
 
