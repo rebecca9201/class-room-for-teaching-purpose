@@ -67,6 +67,8 @@ RSpec.describe CoursesController do
   end
 
   describe "POST create" do
+    let(:user) {create(:user)}
+    before {sign_in user}
     context "when course doesn't have a title " do
       it "doesn't create a record" do
         expect{ post :create, course: {:description => "bar"} }.to change{Course.count}.by(0)
@@ -93,24 +95,51 @@ RSpec.describe CoursesController do
 
         expect(response).to redirect_to courses_path
       end
+
+      it "creates a course for user" do
+        course = build(:course)
+
+        post :create, params: { course: attributes_for(:course) }
+
+        expect(Course.last.user).to eq(user)
+      end
     end
   end
 
   describe "GET edit" do
-    it "assign course" do
-      course = create(:course)
 
-      get :edit , params: {id: course.id}
+    let(:author) { create(:user) }
+    let(:not_author) { create(:user) }
 
-      expect(assigns[:course]).to eq(course)
+    context "signed in as author" do
+      before { sign_in author }
+      it "assign course" do
+        course = create(:course, user: author)
+
+        get :edit , params: {id: course.id}
+
+        expect(assigns[:course]).to eq(course)
+      end
+
+      it "render template" do
+        course = create(:course, user: author)
+
+        get :edit , :id => course.id
+
+        expect(response).to render_template("edit")
+      end
     end
 
-    it "render template" do
-      course = create(:course)
+    context "when signed in not as author" do
+      before { sign_in not_author}
 
-      get :edit , :id => course.id
+      it "raises an error" do
+        course = create(:course, user: author)
 
-      expect(response).to render_template("edit")
+        expect do
+          get :edit, params: {id: course.id}
+        end.to raise_error ActiveRecord::RecordNotFound
+      end
     end
   end
 
