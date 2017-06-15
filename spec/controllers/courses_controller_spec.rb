@@ -144,73 +144,98 @@ RSpec.describe CoursesController do
   end
 
   describe "PUT update" do
-    context "when course has title" do
-      it "assigns @course" do
-        course = create(:course)
+    let(:author) {create(:user)}
+    let(:not_author) {create(:user)}
 
-        put :update, params: { id: course.id, course: { title: "Title", description: "Description" } }
+    context "when sign_in as author" do
+      before {sign_in author}
+      context "when course has title" do
+        it "assigns @course" do
+          course = create(:course, user: author)
 
-        expect(assigns[:course]).to eq(course)
+          put :update, params: { id: course.id, course: { title: "Title", description: "Description" } }
+
+          expect(assigns[:course]).to eq(course)
+        end
+
+        it "changes value" do
+          course = create(:course, user: author)
+
+          put :update, params: { id: course.id, course: { title: "Title", description: "Description" } }
+
+          expect(assigns[:course].title).to eq("Title")
+          expect(assigns[:course].description).to eq("Description")
+        end
+
+        it "redirects to course_path" do
+          course = create(:course, user: author)
+
+          put :update, params: { id: course.id, course: { title: "Title", description: "Description" } }
+
+          expect(response).to redirect_to course_path(course)
+        end
       end
+      context "when course doesn't have title " do
+        it "doesn't update a record " do
+          course = create(:course, user: author)
 
-      it "changes value" do
-        course = create(:course)
+          put :update, params: { id: course.id, course: { title: "", description: "Description" } }
 
-        put :update, params: { id: course.id, course: { title: "Title", description: "Description" } }
+          expect(course.description).not_to eq("Description")
+        end
 
-        expect(assigns[:course].title).to eq("Title")
-        expect(assigns[:course].description).to eq("Description")
-      end
+        it "renders edit template" do
+          course = create(:course, user: author)
 
-      it "redirects to course_path" do
-        course = create(:course)
+          put :update, params: { id: course.id, course: { title: "", description: "Description" } }
 
-        put :update, params: { id: course.id, course: { title: "Title", description: "Description" } }
-
-        expect(response).to redirect_to course_path(course)
+          expect(response).to render_template("edit")
+        end
       end
     end
 
-    context "when course doesn't have title " do
-      it "doesn't update a record " do
-        course = create(:course)
+     context "sign in not as author" do
+       before { sign_in not_author }
+       it "raises an error" do
+         course = create(:course, user: author)
 
-        put :update, params: { id: course.id, course: { title: "", description: "Description" } }
-
-        expect(course.description).not_to eq("Description")
-      end
-
-      it "renders edit template" do
-        course = create(:course)
-
-        put :update, params: { id: course.id, course: { title: "", description: "Description" } }
-
-        expect(response).to render_template("edit")
+         expect do
+           put :update, params: { id: course.id, course: { title: "", description: "Description" } }
+        end.to raise_error ActiveRecord::RecordNotFound
       end
     end
   end
 
   describe "DELETE destroy" do
-    it "assigns @course" do
-      course = create(:course)
+    let(:author) { create(:user) }
+    let(:not_author) { create(:user) }
+    let(:course) {create(:course, user: author)}
+    context "when sign in as author" do
+      before { sign_in author }
 
-      delete :destroy, id: course.id
+      it "deletes a record" do
+        course = create(:course, user: author)
+        expect { delete :destroy, params: { id: course.id } }.to change { Course.count }.by(-1)
+      end
 
-      expect(assigns[:course]).to eq(course)
-    end
+      it "assigns @course" do
+        delete :destroy, params: { id: course.id }
+        expect(assigns[:course]).to eq(course)
+      end
 
-    it "deletes a record" do
-      course = create(:course)
+      it "redirects to courses_path" do
+        delete :destroy, params: { id: course.id }
+        expect(response).to redirect_to courses_path
+      end
+     end
 
-      expect { delete :destroy, id: course.id }.to change { Course.count }.by(-1)
-    end
-
-    it "redirects to courses_path" do
-      course = create(:course)
-
-      delete :destroy, id: course.id
-
-      expect(response).to redirect_to courses_path
+    context "when sign in not as author" do
+      before { sign_in not_author }
+      it "raises an error" do
+        expect do
+          delete :destroy, params: { id: course.id }
+        end.to raise_error ActiveRecord::RecordNotFound
+      end
     end
   end
 
